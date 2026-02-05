@@ -1036,6 +1036,154 @@
       source.start();
     }
 
+    function playVictoryMusic() {
+      // Upbeat victory tune! Catchy and celebratory
+      const melody = [
+        // Intro fanfare
+        { note: 523, duration: 0.1, type: 'square' },   // C5
+        { note: 523, duration: 0.1, type: 'square' },   // C5
+        { note: 784, duration: 0.2, type: 'square' },   // G5
+        { note: 0, duration: 0.1 },                      // rest
+        // Main melody - bouncy and fun
+        { note: 659, duration: 0.15, type: 'triangle' }, // E5
+        { note: 784, duration: 0.15, type: 'triangle' }, // G5
+        { note: 880, duration: 0.15, type: 'triangle' }, // A5
+        { note: 1047, duration: 0.25, type: 'triangle' },// C6
+        { note: 880, duration: 0.1, type: 'sine' },      // A5
+        { note: 1047, duration: 0.1, type: 'sine' },     // C6
+        { note: 1175, duration: 0.1, type: 'sine' },     // D6
+        { note: 1319, duration: 0.35, type: 'sine' },    // E6 (high!)
+        // Ending flourish
+        { note: 1175, duration: 0.1, type: 'triangle' }, // D6
+        { note: 1319, duration: 0.1, type: 'triangle' }, // E6
+        { note: 1568, duration: 0.4, type: 'triangle' }, // G6 (super high finish!)
+      ];
+
+      let time = audioCtx.currentTime + 0.2;
+
+      melody.forEach((item) => {
+        if (item.note === 0) {
+          time += item.duration;
+          return;
+        }
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.type = item.type || 'sine';
+        osc.frequency.value = item.note;
+
+        gain.gain.setValueAtTime(0.2, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + item.duration);
+
+        osc.start(time);
+        osc.stop(time + item.duration + 0.05);
+
+        time += item.duration * 0.85;
+      });
+
+      // Big chord at the end!
+      setTimeout(() => {
+        const chordNotes = [523, 659, 784, 1047, 1319]; // C major with high E
+        chordNotes.forEach(freq => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.8);
+        });
+      }, 1500);
+    }
+
+    function playSillyWrongMusic() {
+      // Super silly wrong answer music!
+      // Starts normal then goes wonky with pitch bends and fart sounds
+      const melody = [
+        { note: 400, duration: 0.15, type: 'square' },
+        { note: 350, duration: 0.15, type: 'square' },
+        { note: 300, duration: 0.15, type: 'sawtooth' },
+        { note: 250, duration: 0.2, type: 'sawtooth', bend: true },
+        { note: 150, duration: 0.3, type: 'sawtooth', bend: true },
+        { note: 80, duration: 0.5, type: 'sawtooth', bend: true },
+      ];
+
+      let time = audioCtx.currentTime;
+
+      melody.forEach((item) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.type = item.type;
+        filter.type = 'lowpass';
+        filter.frequency.value = 800;
+
+        osc.frequency.setValueAtTime(item.note, time);
+        if (item.bend) {
+          // Silly pitch bend down
+          osc.frequency.exponentialRampToValueAtTime(item.note * 0.5, time + item.duration);
+        }
+
+        gain.gain.setValueAtTime(0.25, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + item.duration);
+
+        osc.start(time);
+        osc.stop(time + item.duration + 0.05);
+
+        time += item.duration * 0.9;
+      });
+
+      // Add silly boings
+      setTimeout(() => {
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(200 + Math.random() * 100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+          }, i * 150);
+        }
+      }, 800);
+
+      // Final splat sound
+      setTimeout(() => {
+        const bufferSize = audioCtx.sampleRate * 0.3;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
+        }
+        const source = audioCtx.createBufferSource();
+        const filter = audioCtx.createBiquadFilter();
+        const gain = audioCtx.createGain();
+        source.buffer = buffer;
+        filter.type = 'lowpass';
+        filter.frequency.value = 300;
+        gain.gain.value = 0.3;
+        source.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+        source.start();
+      }, 1200);
+    }
+
     function handleAnswerKey(event) {
       if (event.key === 'Enter') {
         checkAnswer();
@@ -1068,12 +1216,12 @@
         document.getElementById('total').classList.add('show');
         document.getElementById('answerContainer').classList.remove('show');
 
-        // Celebration sounds!
+        // Celebration sounds + victory music!
         playDingDing();
+        playVictoryMusic();
         setTimeout(() => {
-          playCelebrate();
           playCheer();
-        }, 400);
+        }, 800);
         spawnConfetti();
         pendingAnswer = null;
       } else {
@@ -1084,8 +1232,8 @@
         resultEl.textContent = wrongPhrases[Math.floor(Math.random() * wrongPhrases.length)];
         resultEl.className = 'answer-result wrong';
 
-        // Sad trombone!
-        playSadTrombone();
+        // Super silly wrong music!
+        playSillyWrongMusic();
 
         // Clear the input for another try
         input.value = '';
