@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Silly Dice Roller!</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      overflow: hidden;
+    }
+
+    h1 {
+      color: white;
+      font-size: 3rem;
+      text-shadow: 3px 3px 0 #ff6b6b, 6px 6px 0 #feca57;
+      margin-bottom: 2rem;
+      animation: bounce 1s ease infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    .dice-container {
+      display: flex;
+      gap: 2rem;
+      margin-bottom: 2rem;
+    }
+
+    .dice {
+      width: 120px;
+      height: 120px;
+      background: white;
+      border-radius: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      padding: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+      transition: transform 0.1s;
+    }
+
+    .dice.rolling {
+      animation: roll 0.1s ease infinite;
+    }
+
+    @keyframes roll {
+      0% { transform: rotate(0deg) scale(1); }
+      25% { transform: rotate(10deg) scale(1.1); }
+      50% { transform: rotate(0deg) scale(1); }
+      75% { transform: rotate(-10deg) scale(1.1); }
+      100% { transform: rotate(0deg) scale(1); }
+    }
+
+    .dot {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .dot.show {
+      background: #e74c3c;
+      box-shadow: inset -3px -3px 5px rgba(0,0,0,0.2);
+    }
+
+    .roll-btn {
+      font-size: 2.5rem;
+      padding: 1rem 3rem;
+      border: none;
+      border-radius: 50px;
+      background: linear-gradient(45deg, #ff6b6b, #feca57);
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.2);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .roll-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+    }
+
+    .roll-btn:active {
+      transform: scale(0.95);
+    }
+
+    .math {
+      margin-top: 1.5rem;
+      font-size: 3rem;
+      color: white;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .math.show {
+      opacity: 1;
+      animation: pop 0.3s ease;
+    }
+
+    .answer-input-container {
+      display: none;
+      margin-top: 1rem;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .answer-input-container.show {
+      display: flex;
+    }
+
+    .answer-input {
+      width: 100px;
+      font-size: 2.5rem;
+      padding: 0.5rem;
+      border: 4px solid white;
+      border-radius: 15px;
+      text-align: center;
+      font-family: inherit;
+      font-weight: bold;
+      background: rgba(255,255,255,0.9);
+      color: #333;
+    }
+
+    .answer-input:focus {
+      outline: none;
+      border-color: #feca57;
+      box-shadow: 0 0 20px rgba(254, 202, 87, 0.5);
+    }
+
+    .answer-input.wrong {
+      animation: wrongShake 0.5s ease;
+      border-color: #ff6b6b;
+    }
+
+    .answer-input.correct {
+      border-color: #1dd1a1;
+      background: #d5f5e3;
+    }
+
+    @keyframes wrongShake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-10px); }
+      40%, 80% { transform: translateX(10px); }
+    }
+
+    .check-btn {
+      font-size: 1.8rem;
+      padding: 0.8rem 1.5rem;
+      border: none;
+      border-radius: 20px;
+      background: linear-gradient(45deg, #1dd1a1, #10ac84);
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+      transition: transform 0.2s;
+    }
+
+    .check-btn:hover {
+      transform: scale(1.1);
+    }
+
+    .answer-result {
+      margin-top: 0.5rem;
+      font-size: 2rem;
+      min-height: 2.5rem;
+    }
+
+    .answer-result.correct {
+      color: #1dd1a1;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+      animation: pop 0.5s ease;
+    }
+
+    .answer-result.wrong {
+      color: #ff6b6b;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+      animation: pop 0.3s ease;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 10px rgba(29, 209, 161, 0.5); }
+      50% { box-shadow: 0 0 25px rgba(29, 209, 161, 0.8); }
+    }
+
+    .total {
+      margin-top: 0.5rem;
+      font-size: 4rem;
+      color: #feca57;
+      text-shadow: 3px 3px 0 #ff6b6b;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .total.show {
+      opacity: 1;
+      animation: pop 0.5s ease;
+    }
+
+    @keyframes pop {
+      0% { transform: scale(0); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+
+    .confetti {
+      position: fixed;
+      pointer-events: none;
+      animation: fall 2s ease-out forwards;
+      line-height: 1;
+    }
+
+    @keyframes fall {
+      0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+      25% { transform: translateY(25vh) translateX(20px) rotate(180deg); }
+      50% { transform: translateY(50vh) translateX(-20px) rotate(360deg); }
+      75% { transform: translateY(75vh) translateX(20px) rotate(540deg); opacity: 1; }
+      100% { transform: translateY(100vh) translateX(0) rotate(720deg); opacity: 0; }
+    }
+
+    .doubles {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 5rem;
+      color: #feca57;
+      text-shadow: 4px 4px 0 #ff6b6b;
+      animation: doubles 1s ease forwards;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    @keyframes doubles {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(-20deg); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.5) rotate(10deg); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(2) rotate(0deg); }
+    }
+
+    .players {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .player-btn {
+      font-size: 1.5rem;
+      padding: 0.8rem 1.5rem;
+      border: 4px solid white;
+      border-radius: 20px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+      color: white;
+    }
+
+    .player-btn:hover {
+      transform: scale(1.05);
+    }
+
+    .player-btn.active {
+      transform: scale(1.15);
+      box-shadow: 0 0 30px rgba(255,255,255,0.8);
+      animation: glow 1s ease infinite;
+    }
+
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(255,255,255,0.6); }
+      50% { box-shadow: 0 0 40px rgba(255,255,255,1); }
+    }
+
+    .add-player-btn {
+      font-size: 1.5rem;
+      width: 50px;
+      height: 50px;
+      border: 4px dashed rgba(255,255,255,0.6);
+      border-radius: 50%;
+      background: transparent;
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .add-player-btn:hover {
+      transform: scale(1.1);
+      border-color: white;
+    }
+
+    .edit-btn {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      font-size: 1.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 15px;
+      background: rgba(255,255,255,0.2);
+      color: white;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.2s;
+    }
+
+    .edit-btn:hover {
+      background: rgba(255,255,255,0.4);
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal.show {
+      display: flex;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 2rem;
+      border-radius: 20px;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .modal h2 {
+      color: #667eea;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    .player-input {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+
+    .player-input input {
+      flex: 1;
+      font-size: 1.2rem;
+      padding: 0.5rem;
+      border: 3px solid #ddd;
+      border-radius: 10px;
+      font-family: inherit;
+    }
+
+    .player-input input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .color-dot {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+    }
+
+    .remove-btn {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .modal-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    .modal-btn {
+      flex: 1;
+      font-size: 1.2rem;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+    }
+
+    .modal-btn.save {
+      background: linear-gradient(45deg, #1dd1a1, #10ac84);
+      color: white;
+    }
+
+    .modal-btn.add {
+      background: linear-gradient(45deg, #48dbfb, #0abde3);
+      color: white;
+    }
+
+    .turn-text {
+      color: white;
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+    }
+
+    .silly-phrase {
+      position: fixed;
+      font-size: 3rem;
+      color: white;
+      text-shadow: 3px 3px 0 #ff6b6b;
+      pointer-events: none;
+      animation: floatUp 1.5s ease forwards;
+      z-index: 50;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1) rotate(-5deg); }
+      100% { opacity: 0; transform: translateY(-150px) scale(1.5) rotate(5deg); }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
+      20%, 40%, 60%, 80% { transform: translateX(10px); }
+    }
+
+    body.shaking {
+      animation: shake 0.5s ease;
+    }
+
+    .dice:hover {
+      animation: wobble 0.5s ease;
+    }
+
+    @keyframes wobble {
+      0%, 100% { transform: rotate(0deg); }
+      25% { transform: rotate(5deg); }
+      75% { transform: rotate(-5deg); }
+    }
+
+    .snake-eyes {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      pointer-events: none;
+      z-index: 100;
+      animation: snakeEyes 1.5s ease forwards;
+    }
+
+    @keyframes snakeEyes {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+      20% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
+      40% { transform: translate(-50%, -50%) scale(1) rotate(10deg); }
+      60% { transform: translate(-50%, -50%) scale(1.2) rotate(-10deg); }
+      80% { transform: translate(-50%, -50%) scale(1) rotate(5deg); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
+    }
+
+    .boxcars {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 4rem;
+      pointer-events: none;
+      z-index: 100;
+      animation: boxcars 1.5s ease forwards;
+    }
+
+    @keyframes boxcars {
+      0% { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.5) rotate(360deg); }
+      100% { opacity: 0; transform: translate(-50%, -50%) scale(2) rotate(720deg); }
+    }
+  </style>
+</head>
+<body>
+  <button class="edit-btn" onclick="openModal()">Edit Players</button>
+
+  <h1>Roll the Dice!</h1>
+
+  <div class="players" id="playersContainer"></div>
+
+  <div class="turn-text" id="turnText"></div>
+
+  <!-- Player Setup Modal -->
+  <div class="modal" id="modal">
+    <div class="modal-content">
+      <h2>Who's Playing?</h2>
+      <div id="playerInputs"></div>
+      <div class="modal-buttons">
+        <button class="modal-btn add" onclick="addPlayerInput()">+ Add Player</button>
+        <button class="modal-btn save" onclick="savePlayers()">Let's Play!</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dice-container">
+    <div class="dice" id="dice1"></div>
+    <div class="dice" id="dice2"></div>
+  </div>
+
+  <button class="roll-btn" onclick="rollDice()">ROLL!</button>
+
+  <div class="math" id="math"></div>
+  <div class="answer-input-container" id="answerContainer">
+    <input type="number" id="answerInput" class="answer-input" placeholder="?" min="2" max="12" onkeydown="handleAnswerKey(event)">
+    <button class="check-btn" onclick="checkAnswer()">Check!</button>
+  </div>
+  <div class="answer-result" id="answerResult"></div>
+  <div class="total" id="total"></div>
+
+  <script>
+    // Dice face patterns (which dots to show for each number)
+    const patterns = {
+      1: [0,0,0,0,1,0,0,0,0],
+      2: [1,0,0,0,0,0,0,0,1],
+      3: [1,0,0,0,1,0,0,0,1],
+      4: [1,0,1,0,0,0,1,0,1],
+      5: [1,0,1,0,1,0,1,0,1],
+      6: [1,0,1,1,0,1,1,0,1]
+    };
+
+    // Audio context for silly sounds
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    function playBoing() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+      osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function playWhoosh() {
+      const bufferSize = audioCtx.sampleRate * 0.2;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      }
+      const source = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      source.buffer = buffer;
+      filter.type = 'bandpass';
+      filter.frequency.value = 1000;
+      gain.gain.value = 0.3;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      source.start();
+    }
+
+    function playTaDa() {
+      const notes = [523, 659, 784];
+      notes.forEach((freq, i) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'triangle';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        }, i * 100);
+      });
+    }
+
+    function playDoubles() {
+      // Silly fanfare for doubles!
+      const notes = [392, 523, 659, 784, 1047];
+      notes.forEach((freq, i) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'square';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.2);
+        }, i * 80);
+      });
+    }
+
+    function playFart() {
+      // Kids love fart sounds!
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      filter.type = 'lowpass';
+      filter.frequency.value = 200;
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.5);
+    }
+
+    function playHonk() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+      osc.frequency.setValueAtTime(220, audioCtx.currentTime + 0.1);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function playWow() {
+      // Ascending "wow" sound
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.2);
+      osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    // Silly phrases
+    const sillyPhrases = [
+      'BONKERS!', 'Holy Moly!', 'WOWZA!', 'Banana!',
+      'Boing!', 'YIPPEE!', 'Zoinks!', 'Wahoo!',
+      'Silly beans!', 'Oh snap!', 'KAPOW!', 'Wacky!',
+      'Bazinga!', 'Booyah!', 'Cowabunga!'
+    ];
+
+    function showSillyPhrase() {
+      const phrase = sillyPhrases[Math.floor(Math.random() * sillyPhrases.length)];
+      const el = document.createElement('div');
+      el.className = 'silly-phrase';
+      el.textContent = phrase;
+      el.style.left = (20 + Math.random() * 60) + '%';
+      el.style.top = (40 + Math.random() * 20) + '%';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    }
+
+    function shakeScreen() {
+      document.body.classList.add('shaking');
+      setTimeout(() => document.body.classList.remove('shaking'), 500);
+    }
+
+    function showSnakeEyes() {
+      const el = document.createElement('div');
+      el.className = 'snake-eyes';
+      el.textContent = 'SNAKE EYES!';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    }
+
+    function showBoxcars() {
+      const el = document.createElement('div');
+      el.className = 'boxcars';
+      el.textContent = 'BOXCARS!';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    }
+
+    function renderDice(diceEl, number) {
+      // Clear existing dots using safe DOM method
+      while (diceEl.firstChild) {
+        diceEl.removeChild(diceEl.firstChild);
+      }
+
+      const pattern = patterns[number];
+      pattern.forEach(show => {
+        const dot = document.createElement('div');
+        dot.className = 'dot' + (show ? ' show' : '');
+        diceEl.appendChild(dot);
+      });
+    }
+
+    function spawnConfetti() {
+      // Hearts, stars, princess stuff!
+      const emojis = [
+        '❤️', '💖', '💜', '💙', '💕', '💗',  // hearts
+        '⭐', '🌟', '✨', '💫',                // stars
+        '👑', '👸', '🏰', '🦄', '🧚', '🎀',    // princess
+        '🦋', '🌸', '🌺', '🌷', '💎', '🌈',    // pretty things
+        '🎉', '🎊'                            // party
+      ];
+
+      for (let i = 0; i < 40; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.left = Math.random() * 100 + 'vw';
+          confetti.style.top = '-20px';
+
+          // Mix of emojis and dashed outline shapes
+          if (Math.random() > 0.3) {
+            // Emoji
+            confetti.style.fontSize = (20 + Math.random() * 25) + 'px';
+            confetti.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+          } else {
+            // Dashed outline shape
+            const size = 15 + Math.random() * 20;
+            confetti.style.width = size + 'px';
+            confetti.style.height = size + 'px';
+            confetti.style.border = '3px dashed';
+            confetti.style.borderColor = ['#ff6b6b', '#feca57', '#48dbfb', '#ff9ff3', '#a29bfe', '#1dd1a1'][Math.floor(Math.random() * 6)];
+
+            // Random dashed shapes: circle, heart, star, diamond
+            const shapeType = Math.floor(Math.random() * 4);
+            if (shapeType === 0) {
+              // Circle
+              confetti.style.borderRadius = '50%';
+            } else if (shapeType === 1) {
+              // Diamond
+              confetti.style.transform = 'rotate(45deg)';
+            } else if (shapeType === 2) {
+              // Heart outline (using clip-path)
+              confetti.style.borderRadius = '50% 50% 0 0';
+              confetti.style.transform = 'rotate(-45deg)';
+            } else {
+              // Square with rounded corners
+              confetti.style.borderRadius = '5px';
+            }
+          }
+
+          // Slower fall - 4-6 seconds
+          const fallDuration = 4 + Math.random() * 2;
+          confetti.style.animationDuration = fallDuration + 's';
+
+          document.body.appendChild(confetti);
+          setTimeout(() => confetti.remove(), fallDuration * 1000);
+        }, i * 80);  // Spawn slower too
+      }
+    }
+
+    function showDoubles() {
+      const el = document.createElement('div');
+      el.className = 'doubles';
+      el.textContent = 'DOUBLES!';
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+
+    let isRolling = false;
+    let pendingAnswer = null;
+
+    // Player colors
+    const playerColors = [
+      'linear-gradient(45deg, #48dbfb, #0abde3)', // blue
+      'linear-gradient(45deg, #ff9ff3, #f368e0)', // pink
+      'linear-gradient(45deg, #feca57, #ff9f43)', // orange
+      'linear-gradient(45deg, #1dd1a1, #10ac84)', // green
+      'linear-gradient(45deg, #ff6b6b, #ee5a5a)', // red
+      'linear-gradient(45deg, #a29bfe, #6c5ce7)', // purple
+    ];
+
+    // Players array
+    let players = [
+      { name: 'JiaLin', color: playerColors[0] },
+      { name: 'Mom', color: playerColors[1] }
+    ];
+    let currentPlayerIndex = 0;
+
+    function renderPlayers() {
+      const container = document.getElementById('playersContainer');
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
+      players.forEach((player, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'player-btn' + (index === currentPlayerIndex ? ' active' : '');
+        btn.style.background = player.color;
+        btn.textContent = player.name;
+        btn.onclick = () => selectPlayer(index);
+        container.appendChild(btn);
+      });
+
+      updateTurnText();
+    }
+
+    function selectPlayer(index) {
+      currentPlayerIndex = index;
+      document.querySelectorAll('.player-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === index);
+      });
+      updateTurnText();
+    }
+
+    function updateTurnText() {
+      document.getElementById('turnText').textContent = players[currentPlayerIndex].name + "'s turn!";
+    }
+
+    function switchPlayer() {
+      const next = (currentPlayerIndex + 1) % players.length;
+      selectPlayer(next);
+    }
+
+    // Modal functions
+    function openModal() {
+      renderPlayerInputs();
+      document.getElementById('modal').classList.add('show');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('show');
+    }
+
+    function renderPlayerInputs() {
+      const container = document.getElementById('playerInputs');
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+
+      players.forEach((player, index) => {
+        const div = document.createElement('div');
+        div.className = 'player-input';
+
+        const colorDot = document.createElement('button');
+        colorDot.className = 'color-dot';
+        colorDot.style.background = player.color;
+        colorDot.onclick = () => cycleColor(index);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.value = player.name;
+        input.placeholder = 'Player name';
+        input.dataset.index = index;
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'remove-btn';
+        removeBtn.textContent = '×';
+        removeBtn.onclick = () => removePlayer(index);
+        if (players.length <= 2) removeBtn.style.visibility = 'hidden';
+
+        div.appendChild(colorDot);
+        div.appendChild(input);
+        div.appendChild(removeBtn);
+        container.appendChild(div);
+      });
+    }
+
+    function cycleColor(index) {
+      const currentColorIndex = playerColors.indexOf(players[index].color);
+      const nextColorIndex = (currentColorIndex + 1) % playerColors.length;
+      players[index].color = playerColors[nextColorIndex];
+      renderPlayerInputs();
+    }
+
+    function addPlayerInput() {
+      if (players.length >= 6) return;
+      const usedColors = players.map(p => p.color);
+      const availableColor = playerColors.find(c => !usedColors.includes(c)) || playerColors[0];
+      players.push({ name: 'Player ' + (players.length + 1), color: availableColor });
+      renderPlayerInputs();
+    }
+
+    function removePlayer(index) {
+      if (players.length <= 2) return;
+      players.splice(index, 1);
+      if (currentPlayerIndex >= players.length) {
+        currentPlayerIndex = 0;
+      }
+      renderPlayerInputs();
+    }
+
+    function savePlayers() {
+      const inputs = document.querySelectorAll('#playerInputs input');
+      inputs.forEach((input, index) => {
+        players[index].name = input.value.trim() || ('Player ' + (index + 1));
+      });
+      closeModal();
+      renderPlayers();
+    }
+
+    const wrongPhrases = [
+      'Oopsie!', 'Try again!', 'Almost!', 'Nope!', 'Silly goose!',
+      'Bonk!', 'Whoops!', 'Not quite!', 'Uh oh!', 'Bzzzzt!'
+    ];
+
+    const correctPhrases = [
+      'AMAZING!', 'You got it!', 'GENIUS!', 'Super star!', 'WOW!',
+      'Brilliant!', 'Perfect!', 'Awesome!', 'Fantastic!', 'Yay!'
+    ];
+
+    function playBuzz() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.type = 'sawtooth';
+      osc.frequency.value = 80;
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function playSadTrombone() {
+      // Wah wah wah waaaaaah
+      const notes = [392, 370, 349, 233];
+      const durations = [0.25, 0.25, 0.25, 0.8];
+      let time = audioCtx.currentTime;
+
+      notes.forEach((freq, i) => {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, time);
+        if (i === 3) {
+          // Last note slides down
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.8, time + durations[i]);
+        }
+        gain.gain.setValueAtTime(0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.01, time + durations[i]);
+        osc.start(time);
+        osc.stop(time + durations[i]);
+        time += durations[i];
+      });
+    }
+
+    function playDingDing() {
+      // Cheerful ding ding ding!
+      const times = [0, 0.15, 0.3];
+      times.forEach((delay) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = 1200;
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.15);
+        }, delay * 1000);
+      });
+    }
+
+    function playCelebrate() {
+      // Happy ascending arpeggio
+      const notes = [523, 659, 784, 1047, 1319];
+      notes.forEach((freq, i) => {
+        setTimeout(() => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.type = 'sine';
+          osc.frequency.value = freq;
+          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.2);
+        }, i * 60);
+      });
+    }
+
+    function playCheer() {
+      // Crowd cheer sound using noise + filter
+      const bufferSize = audioCtx.sampleRate * 0.8;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufferSize; i++) {
+        const envelope = Math.sin(Math.PI * i / bufferSize);
+        data[i] = (Math.random() * 2 - 1) * envelope * 0.5;
+      }
+      const source = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+      source.buffer = buffer;
+      filter.type = 'bandpass';
+      filter.frequency.value = 2000;
+      filter.Q.value = 0.5;
+      gain.gain.value = 0.2;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+      source.start();
+    }
+
+    function handleAnswerKey(event) {
+      if (event.key === 'Enter') {
+        checkAnswer();
+      }
+    }
+
+    function checkAnswer() {
+      if (!pendingAnswer) return;
+
+      const input = document.getElementById('answerInput');
+      const resultEl = document.getElementById('answerResult');
+      const userAnswer = parseInt(input.value);
+      const { value1, value2, total } = pendingAnswer;
+
+      if (isNaN(userAnswer)) {
+        input.classList.add('wrong');
+        setTimeout(() => input.classList.remove('wrong'), 500);
+        playBuzz();
+        return;
+      }
+
+      if (userAnswer === total) {
+        // Correct!
+        input.classList.add('correct');
+        resultEl.textContent = correctPhrases[Math.floor(Math.random() * correctPhrases.length)];
+        resultEl.className = 'answer-result correct';
+
+        document.getElementById('math').textContent = value1 + ' + ' + value2 + ' = ' + total;
+        document.getElementById('total').textContent = 'Move ' + total + ' spaces!';
+        document.getElementById('total').classList.add('show');
+        document.getElementById('answerContainer').classList.remove('show');
+
+        // Celebration sounds!
+        playDingDing();
+        setTimeout(() => {
+          playCelebrate();
+          playCheer();
+        }, 400);
+        spawnConfetti();
+        pendingAnswer = null;
+      } else {
+        // Wrong - try again!
+        input.classList.add('wrong');
+        setTimeout(() => input.classList.remove('wrong'), 500);
+
+        resultEl.textContent = wrongPhrases[Math.floor(Math.random() * wrongPhrases.length)];
+        resultEl.className = 'answer-result wrong';
+
+        // Sad trombone!
+        playSadTrombone();
+
+        // Clear the input for another try
+        input.value = '';
+        input.focus();
+      }
+    }
+
+    function rollDice() {
+      if (isRolling) return;
+      isRolling = true;
+
+      const dice1El = document.getElementById('dice1');
+      const dice2El = document.getElementById('dice2');
+      const mathEl = document.getElementById('math');
+      const totalEl = document.getElementById('total');
+
+      dice1El.classList.add('rolling');
+      dice2El.classList.add('rolling');
+      mathEl.classList.remove('show');
+      totalEl.classList.remove('show');
+      document.getElementById('answerContainer').classList.remove('show');
+      document.getElementById('answerInput').value = '';
+      document.getElementById('answerInput').classList.remove('correct', 'wrong');
+      document.getElementById('answerResult').textContent = '';
+      document.getElementById('answerResult').className = 'answer-result';
+      pendingAnswer = null;
+
+      playWhoosh();
+
+      // Animate random faces during roll
+      let rollCount = 0;
+      const rollInterval = setInterval(() => {
+        renderDice(dice1El, Math.ceil(Math.random() * 6));
+        renderDice(dice2El, Math.ceil(Math.random() * 6));
+        playBoing();
+        rollCount++;
+        if (rollCount >= 10) {
+          clearInterval(rollInterval);
+          finishRoll();
+        }
+      }, 80);
+
+      function finishRoll() {
+        dice1El.classList.remove('rolling');
+        dice2El.classList.remove('rolling');
+
+        const value1 = Math.ceil(Math.random() * 6);
+        const value2 = Math.ceil(Math.random() * 6);
+
+        renderDice(dice1El, value1);
+        renderDice(dice2El, value2);
+
+        const total = value1 + value2;
+
+        // Show the math equation for learning!
+        mathEl.textContent = value1 + ' + ' + value2 + ' = ?';
+        mathEl.classList.add('show');
+
+        // Store the answer and show the input
+        pendingAnswer = { value1, value2, total };
+        document.getElementById('answerContainer').classList.add('show');
+        document.getElementById('answerInput').focus();
+
+        // Show a silly phrase most of the time
+        if (Math.random() > 0.3) {
+          showSillyPhrase();
+        }
+
+        // Screen shake on big rolls!
+        if (total >= 10) {
+          shakeScreen();
+          playWow();
+        }
+
+        // Special cases
+        if (value1 === 1 && value2 === 1) {
+          // Snake eyes! (1+1)
+          playFart();
+          showSnakeEyes();
+          playHonk();
+          document.getElementById('turnText').textContent = players[currentPlayerIndex].name + ' rolls again!';
+        } else if (value1 === 6 && value2 === 6) {
+          // Boxcars! (6+6)
+          playDoubles();
+          showBoxcars();
+          spawnConfetti();
+          shakeScreen();
+          document.getElementById('turnText').textContent = players[currentPlayerIndex].name + ' rolls again!';
+        } else if (value1 === value2) {
+          // Regular doubles
+          playDoubles();
+          showDoubles();
+          spawnConfetti();
+          document.getElementById('turnText').textContent = players[currentPlayerIndex].name + ' rolls again!';
+        } else {
+          playTaDa();
+          // Switch to next player after a moment
+          setTimeout(switchPlayer, 1500);
+        }
+
+        isRolling = false;
+      }
+    }
+
+    // Initialize
+    renderDice(document.getElementById('dice1'), 1);
+    renderDice(document.getElementById('dice2'), 1);
+    renderPlayers();
+  </script>
+</body>
+</html>
